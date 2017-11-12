@@ -73,7 +73,7 @@ class ClassDefinitionProcessor < Parser::AST::Processor
     return klass if klass
 
     RubyClass.build_external(name, RubyClass.global_scope).tap do |klass|
-      scope.constants = (scope.constants << klass).uniq
+      RubyClass.global_scope.constants = (RubyClass.global_scope.constants << klass).uniq
       @klasses << klass
     end
   end

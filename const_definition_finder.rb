@@ -1,7 +1,7 @@
 require_relative 'ruby_class.rb'
 
 # TODO: add lazy loading
-# TODO: complex names resolving
+# TODO: complex names resolving?
 
 class ConstDefinitionFinder
   def initialize(full_const_name, scope)

@@ -7,9 +7,9 @@ class GraphBuilder
   end
 
   def call
-    # Graph.new(*graph_nodes(DefinitionsInformation.new(*definitions)))
-    definitions
-    # calls
+    definitions.tap do |klasses|
+      calls(klasses)
+    end
   end
 
   private
@@ -25,38 +25,13 @@ class GraphBuilder
     end
   end
 
-  # def calls
-  #   result_classes = classes
-  #   filepaths.inject([]) do |result, filepath|
-  #     processor = ClassRelationProcessor.new.populate(result_classes)
-  #     processor.process(codefile_ast(filepath))
-  #     # result + processor.klasses
-  #   end
-  # end
-
-  # def definitions # first pass
-  #   filepaths.inject([[], [], {}]) do |summary, filepath|
-  #     klass_definitions, konst_definitions, klass_ancestors = *summary
-  #     processor = ClassDefinitionsProcessor.new
-  #     processor.process(codefile_ast(filepath))
-  #     [
-  #       klass_definitions + processor.klass_definitions,
-  #       konst_definitions + processor.konst_definitions,
-  #       klass_ancestors.merge(processor.klass_ancestors)
-  #     ]
-  #   end
-  # end
-
-  # def graph_nodes(definitions) # second pass
-  #   filepaths.inject([{}, {}]) do |(dependents, klass_ancestors), filepath|
-  #     processor = KlassRelationsProcessor.new.populate(definitions)
-  #     processor.process(codefile_ast(filepath))
-  #     [
-  #       dependents.merge(processor.classes),
-  #       klass_ancestors.merge(processor.klass_ancestors)
-  #     ]
-  #   end
-  # end
+  def calls(klasses)
+    filepaths.each do |filepath|
+      processor = ClassRelationProcessor.new
+      processor.klasses = klasses
+      processor.process(codefile_ast(filepath))
+    end
+  end
 
   def codefile_ast(filepath)
     source_code = File.read(filepath)

@@ -38,6 +38,10 @@ class NodeWrapper
     node.loc.expression.source.sub(/\A::/, '')
   end
 
+  def class_definition?
+    %i[class module const].include?(parent.type)
+  end
+
   private
 
   def source_for(node)

@@ -43,7 +43,8 @@ end
 module A1
   include D1
   class B1
-    K1 = 123
+    class K1
+    end
   end
 end
 
