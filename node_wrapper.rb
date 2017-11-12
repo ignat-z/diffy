@@ -1,4 +1,6 @@
 class NodeWrapper
+  CLASS_NODES = %i(module class)
+
   attr_reader :node, :nesting
 
   def initialize(node, nesting)
@@ -12,22 +14,6 @@ class NodeWrapper
 
   def global_scope?
     nesting.size <= 2
-  end
-
-  # TODO: move to private
-  def source_for(node)
-    node.loc.expression.source
-  end
-
-  # module A::B; module C; module D; end; end; end # <- first nesting level
-  #              module C; module D; end; end;     # <- second nesting level
-  #                        module D; end;          # <- third nesting level
-  #
-  # @return: [[:A, :B], [:C], [:D]]
-  def module_hierarchy
-    (nesting - [current_namespace_node])
-      .select { |node| node.type == :module }
-      .map { |subnode| construct_hierarchy(subnode) }
   end
 
   def current_namespace_node(deep_level = 1)
@@ -54,21 +40,7 @@ class NodeWrapper
 
   private
 
-  # Source code: module A::B; end
-  # AST: s(:module, s(:const, s(:const, nil, :A), :B), nil)
-  # @return: [:A, :B]
-  def construct_hierarchy(node)
-    konstants, _body = *node
-    hierarchy = []
-    current_node = konstants
-    loop do
-      submodule, _konst = *current_node
-      hierarchy << source_for(current_node)
-      break if submodule.nil?
-      current_node = submodule
-    end
-    # hierarchy.reverse
-    # HOTFIX
-    hierarchy.reverse.last(1)
+  def source_for(node)
+    node.loc.expression.source
   end
 end

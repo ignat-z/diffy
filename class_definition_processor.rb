@@ -5,18 +5,22 @@ require_relative 'const_definition_finder.rb'
 
 
 class ClassDefinitionProcessor < Parser::AST::Processor
-  attr_reader :klasses, :klass_dependencies
+  CLASS_OR_MODULE = %i(class module)
+
+  attr_accessor :klasses
 
   def initialize(*)
     super
     @klasses = []
     @nesting = []
+    @current_scope = [RubyClass.global_scope]
   end
 
   def process(node)
     @nesting.push(node)
     super
-    @nesting.pop
+    node = @nesting.pop
+    @current_scope.pop if CLASS_OR_MODULE.include?(node&.type)
   end
 
   def on_class(node)
@@ -29,61 +33,53 @@ class ClassDefinitionProcessor < Parser::AST::Processor
     super
   end
 
-  def declare_info(wrapped_node)
-    ruby_class = find_in_klasses(wrapped_node) || RubyClass.new
-    scope = wrapped_node.global_scope? ? RubyClass.global_scope : find_scope_declaration(wrapped_node)
-    parent = ConstDefinitionFinder.new(wrapped_node.this_class_parent_name, scope).call
-    ruby_class.build_by_ast_node(wrapped_node, scope, parent)
-
-    return if find_in_klasses(wrapped_node)
-
-    @klasses << ruby_class
-    scope.constants << ruby_class
-
-    # TODO: check for redefining
-    # parent.constants << ruby_class
-  end
-
-  def find_scope_declaration(wrapped_node)
-
-    # TODO: check not only module, but also a classes
-    *namespaces, scope = wrapped_node.module_hierarchy
-    find_in_klasses_by_name_and_namespaces(scope.join("::"), namespaces)
-  end
-
   def on_const(node)
+    scope = @current_scope.last
     wrapped_node = NodeWrapper.new(node, @nesting)
 
     unless %i[class const].include?(wrapped_node.parent.type)
       if wrapped_node.current_namespace_node
         if wrapped_node.parent.type == :send && wrapped_node.parent.to_a[1] == :include
-          klass = find_in_klasses(wrapped_node)
-          # klass.includes << find_declaration(wrapped_node, klass)
+          scope.includes << find_or_declare_class(wrapped_node.node_value, scope)
         end
         if wrapped_node.parent.type == :send && wrapped_node.parent.to_a[1] == :extend
-          klass = find_in_klasses(wrapped_node)
-          # klass.extends << find_declaration(wrapped_node, klass)
+          scope.extends << find_or_declare_class(wrapped_node.node_value, scope)
         end
       end
     end
     super
   end
 
-  def source_for(node)
-    node.loc.expression.source
+  private
+
+  def declare_info(wrapped_node)
+    scope = @current_scope.last
+    existed_class = find_existed_class(wrapped_node.current_namespace_name, scope)
+    ruby_class = existed_class || RubyClass.new
+    parent = find_or_declare_class(wrapped_node.this_class_parent_name, scope)
+    ruby_class.set_by_ast_node(wrapped_node, scope, parent)
+
+    scope.constants = (scope.constants << ruby_class).uniq
+    parent.constants = (parent.constants << ruby_class).uniq if parent
+
+    @current_scope.push(ruby_class)
+    return if existed_class
+    @klasses << ruby_class
   end
 
-  def find_in_klasses(wrapped_node)
-    name = wrapped_node.current_namespace_name
-    namespaces = wrapped_node.module_hierarchy
-    find_in_klasses_by_name_and_namespaces(name, namespaces)
+  def find_or_declare_class(name, scope)
+    return unless name
+    klass = ConstDefinitionFinder.new(name, scope).call
+    return klass if klass
+
+    RubyClass.build_external(name, RubyClass.global_scope).tap do |klass|
+      scope.constants = (scope.constants << klass).uniq
+      @klasses << klass
+    end
   end
 
-  def find_in_klasses_by_name_and_namespaces(name, namespaces)
-    @klasses.find { |x| x.name == name && x.namespaces == namespaces }
-  end
-
-  def find_declaration(wrapped_node, current_ruby_class)
-    ConstDefinitionFinder.new(wrapped_node.node_value, current_ruby_class).call
+  def find_existed_class(name, scope)
+    existed_class = scope.constants.find { |klass| klass.name == name }
+    existed_class || RubyClass.global_scope.constants.find { |klass| klass.external && (klass.name == name) }
   end
 end

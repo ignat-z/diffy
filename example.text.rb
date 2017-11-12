@@ -19,6 +19,9 @@ end
 
 module A
   class D
+    class ClassInClass
+    end
+
     def call
       B::C.new
     end
@@ -58,23 +61,3 @@ module C1
     
   end
 end
-
-# module Inc
-  
-# end
-
-
-# module A
-#   class B
-#   end
-# end
-
-# module A
-#   class C
-#     include Inc
-
-#     def call
-#       B.new
-#     end
-#   end
-# end
