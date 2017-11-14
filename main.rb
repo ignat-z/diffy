@@ -1,8 +1,8 @@
 require 'pry'
 require 'parser/current'
-require_relative 'class_definition_processor.rb'
-require_relative 'graph_renderer.rb'
-require_relative 'graph_builder.rb'
+require_relative './class_definition_processor'
+require_relative './graph_renderer'
+require_relative './graph_builder'
 
 
 builder = GraphBuilder.new(ARGV.first || raise('PARAM!!!1'))

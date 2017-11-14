@@ -1,5 +1,5 @@
-require_relative 'class_definition_processor.rb'
-require_relative 'class_relation_processor.rb'
+require_relative './class_definition_processor'
+require_relative './class_relation_processor'
 
 class GraphBuilder
   def initialize(path)

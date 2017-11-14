@@ -1,7 +1,7 @@
 require 'parser/current'
-require_relative 'ruby_class.rb'
-require_relative 'node_wrapper.rb'
-require_relative 'const_definition_finder.rb'
+require_relative './ruby_class'
+require_relative './node_wrapper'
+require_relative './const_definition_finder'
 
 
 class ClassRelationProcessor < Parser::AST::Processor

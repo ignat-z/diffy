@@ -1,7 +1,4 @@
-require_relative 'ruby_class.rb'
-
-# TODO: add lazy loading
-# TODO: complex names resolving?
+require_relative './ruby_class'
 
 class ConstDefinitionFinder
   def initialize(full_const_name, scope)
@@ -11,7 +8,6 @@ class ConstDefinitionFinder
 
   def call
     return if !full_const_name || !scope
-
     result = full_const_name.split("::").inject([scope]) do |scopes, const_name|
       constant = scope_lookup(const_name, scopes.last)
       constant ||= superclass_chain_lookup(const_name, scopes.last)
