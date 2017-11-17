@@ -3,7 +3,9 @@ require_relative './class_relation_processor'
 
 class GraphBuilder
   def initialize(path)
-    @filepaths = path =~ /.rb$/ ? [path] : Dir["#{path}/**/*.rb"]
+    @filepaths = (path =~ /.rb$/ ? [path] : Dir["#{path}/**/*.rb"]).reject do |path|
+      path =~ /vendor/ || path =~ /spec/ || path =~ /db/
+    end
   end
 
   def call

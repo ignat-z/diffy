@@ -47,4 +47,14 @@ class RubyClass < Struct.new(*ruby_class_attributes)
     self.type = wrapped_node.node.type
     self.scope = scope
   end
+
+  def full_name
+    _scope = self.scope;
+    result = []
+    while _scope.name != 'main' do
+      result << _scope.name
+      _scope = _scope.scope
+    end
+    (result + [name]).join("::")
+  end
 end
