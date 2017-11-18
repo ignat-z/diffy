@@ -24,6 +24,14 @@ class RubyClass < Struct.new(*ruby_class_attributes)
     self.external = false
   end
 
+  def self.rebuid_global_scope
+    @@global_scope = RubyClass.new.tap do |klass|
+      klass.name = "main"
+      klass.type = :no_type
+      klass.scope = :end_of_scope
+    end
+  end
+
   def self.global_scope
     @@global_scope ||= RubyClass.new.tap do |klass|
       klass.name = "main"

@@ -2,10 +2,9 @@ require_relative './class_definition_processor'
 require_relative './class_relation_processor'
 
 class GraphBuilder
-  def initialize(path)
-    @filepaths = (path =~ /.rb$/ ? [path] : Dir["#{path}/**/*.rb"]).reject do |path|
-      path =~ /vendor/ || path =~ /spec/ || path =~ /db/
-    end
+  def initialize(ast_objects)
+    RubyClass.rebuid_global_scope # TODO: remove this and make global scope non-class-variable
+    @ast_objects = ast_objects
   end
 
   def call
@@ -16,27 +15,22 @@ class GraphBuilder
 
   private
 
-  attr_reader :filepaths
+  attr_reader :ast_objects
 
   def definitions
-    filepaths.inject([]) do |result, filepath|
+    ast_objects.inject([]) do |result, ast|
       processor = ClassDefinitionProcessor.new
       processor.klasses = result
-      processor.process(codefile_ast(filepath))
+      processor.process(ast)
       processor.klasses
     end
   end
 
   def calls(klasses)
-    filepaths.each do |filepath|
+    ast_objects.each do |ast|
       processor = ClassRelationProcessor.new
       processor.klasses = klasses
-      processor.process(codefile_ast(filepath))
+      processor.process(ast)
     end
-  end
-
-  def codefile_ast(filepath)
-    source_code = File.read(filepath)
-    Parser::CurrentRuby.parse(source_code)
   end
 end
