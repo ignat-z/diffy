@@ -1,7 +1,8 @@
 class GraphRenderer
-  def initialize(relations, klasses)
+  def initialize(relations, klasses, changes)
     @relations = relations
     @klasses = klasses
+    @changes = changes
   end
 
   def call
@@ -9,11 +10,20 @@ class GraphRenderer
       begin_header,
       klasses_info,
       relations_info,
+      changes_info,
       end_header
     ].flatten.join("\n")
   end
 
   private
+
+  def changes_info
+    @changes.map do |klass, dependents|
+      dependents.map do |child|
+        [wrap(klass), ' -> ', wrap(child), '[color="green"]'].join()
+      end
+    end
+  end
 
   def begin_header
     [
@@ -24,14 +34,19 @@ class GraphRenderer
 
   def klasses_info
     @klasses.map do |klass|
-      [wrap(klass), %Q{[label="#{klass}"]}].join(" ")
+      green = @changes.keys.include?(klass) ? 'color="green"' : ''
+      [wrap(klass), %Q{[label="#{klass}" #{green}]}].join(" ")
     end
   end
 
   def relations_info
     @relations.map do |klass, dependents|
       dependents.map do |child|
-        [wrap(klass), wrap(child)].join(' -> ')
+        if @changes[klass].to_a.include?(child)
+          ''
+        else
+          [wrap(klass), wrap(child)].join(' -> ')
+        end
       end
     end
   end
